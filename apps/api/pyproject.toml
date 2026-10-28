@@ -1,0 +1,52 @@
+[project]
+name = "aether-api"
+version = "0.1.0"
+description = "Aether Analytics API, analytics engine and worker"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.30",
+  "pydantic>=2.8",
+  "pydantic-settings>=2.4",
+  "sqlalchemy>=2.0.30",
+  "alembic>=1.13",
+  "psycopg[binary]>=3.2",
+  "duckdb>=1.1",
+  "polars>=1.5",
+  "pyarrow>=17",
+  "fastexcel>=0.11",
+  "sqlglot>=25",
+  "argon2-cffi>=23.1",
+  "python-multipart>=0.0.9",
+  "xlsxwriter>=3.3.0",
+  "email-validator>=2.3.0",
+]
+
+[dependency-groups]
+dev = ["pytest>=8", "httpx>=0.27", "ruff>=0.6"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+# B008: FastAPI dependency/File defaults are idiomatic. UP046: Generic[T] is clearer for pydantic models.
+ignore = ["B008", "UP046"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["E501"]
+
+[project.scripts]
+aether = "app.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]

@@ -1,0 +1,38 @@
+# Full deployment profile: PostgreSQL metadata + API/web + a separate background worker.
+# Ports are published on loopback only. Usage: cp .env.example .env && docker compose up --build -d
+services:
+  postgres:
+    image: postgres:17-alpine   # major version must match pg_dump/pg_restore in the app image (17)
+    environment:
+      POSTGRES_USER: aether
+      POSTGRES_PASSWORD: ${AETHER_DB_PASSWORD:-change-me-locally}
+      POSTGRES_DB: aether
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aether"]
+      interval: 5s
+      retries: 10
+
+  api:
+    image: aether-analytics:local
+    build: { context: ., dockerfile: infra/Dockerfile }
+    depends_on: { postgres: { condition: service_healthy } }
+    environment: &env
+      AETHER_DATABASE_URL: postgresql+psycopg://aether:${AETHER_DB_PASSWORD:-change-me-locally}@postgres:5432/aether
+      AETHER_STORAGE_DIR: /data
+      AETHER_WORKER_MODE: external
+      AETHER_CORS_ORIGINS: '["http://127.0.0.1:${AETHER_PORT:-8000}"]'
+    volumes: [storage:/data]
+    ports: ["127.0.0.1:${AETHER_PORT:-8000}:8000"]   # loopback only; set AETHER_PORT if 8000 is busy
+
+  worker:
+    image: aether-analytics:local   # same image as api, built once
+    pull_policy: never              # local image only; never try a registry
+    depends_on: { postgres: { condition: service_healthy }, api: { condition: service_started } }
+    environment: *env
+    volumes: [storage:/data]
+    command: ["uv", "run", "--no-sync", "aether", "worker"]
+
+volumes:
+  pgdata:
+  storage:

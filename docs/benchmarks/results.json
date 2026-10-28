@@ -1,0 +1,48 @@
+{
+  "generated_at": "2026-10-28T16:31:52.814301+00:00",
+  "methodology": "median wall-clock of repeated runs (1 run for >=1M-row import/profile); single process; synthetic seeded CSV with 7 columns; see app/benchmark.py",
+  "environment": {
+    "os": "Windows-11-10.0.26300-SP0",
+    "python": "3.14.7",
+    "cpu": "Intel64 Family 6 Model 142 Stepping 12, GenuineIntel",
+    "logical_cpus": 8,
+    "duckdb": "2.0.0",
+    "polars": "2.1.0"
+  },
+  "peak_rss_mb": 745.6,
+  "results": [
+    {
+      "rows": 10000,
+      "csv_mb": 0.37,
+      "parquet_mb": 0.09,
+      "import_csv_ms": 65.5,
+      "profile_ms": 70.2,
+      "sql_aggregate_ms": 62.8,
+      "sql_join_window_ms": 73.5,
+      "chart_query_ms": 62.8,
+      "browse_page_ms": 65.4
+    },
+    {
+      "rows": 100000,
+      "csv_mb": 3.84,
+      "parquet_mb": 0.76,
+      "import_csv_ms": 461.1,
+      "profile_ms": 174.8,
+      "sql_aggregate_ms": 74.0,
+      "sql_join_window_ms": 86.3,
+      "chart_query_ms": 70.9,
+      "browse_page_ms": 74.6
+    },
+    {
+      "rows": 1000000,
+      "csv_mb": 39.38,
+      "parquet_mb": 7.47,
+      "import_csv_ms": 4099.5,
+      "profile_ms": 838.6,
+      "sql_aggregate_ms": 106.1,
+      "sql_join_window_ms": 141.4,
+      "chart_query_ms": 112.3,
+      "browse_page_ms": 99.9
+    }
+  ]
+}

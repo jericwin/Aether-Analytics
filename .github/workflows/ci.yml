@@ -1,0 +1,52 @@
+name: CI
+on: [push, pull_request]
+
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: { POSTGRES_USER: aether, POSTGRES_PASSWORD: aether, POSTGRES_DB: aether_test }
+        ports: ["5432:5432"]
+        options: --health-cmd "pg_isready -U aether" --health-interval 5s --health-retries 10
+    defaults: { run: { working-directory: apps/api } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --frozen
+      - run: uv run ruff check app tests
+      - run: uv run alembic upgrade head && uv run alembic check   # check needs a migrated DB
+      - name: Tests (SQLite profile)
+        run: uv run pytest
+      - name: Tests (PostgreSQL)
+        run: sudo apt-get install -y postgresql-client && uv run pytest
+        env: { AETHER_TEST_DATABASE_URL: "postgresql+psycopg://aether:aether@127.0.0.1:5432/aether_test" }
+
+  web:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: apps/web } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 10 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: pnpm, cache-dependency-path: apps/web/pnpm-lock.yaml }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: [api, web]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - uses: pnpm/action-setup@v4
+        with: { version: 10 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 24 }
+      - run: cd apps/api && uv sync --frozen
+      - run: cd apps/web && pnpm install --frozen-lockfile && pnpm build && pnpm exec playwright install --with-deps chromium
+      - run: cd apps/web && pnpm e2e
