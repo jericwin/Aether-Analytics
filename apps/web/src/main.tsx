@@ -11,6 +11,7 @@ import { Spinner } from "@/components/ui/feedback";
 import { TooltipProvider } from "@/components/ui/menu";
 import { AuthPage } from "@/features/auth/AuthPage";
 import { HomePage } from "@/features/home/HomePage";
+import { LandingPage } from "@/features/landing/LandingPage";
 import { JobsPage } from "@/features/jobs/JobsPage";
 import { MembersPage } from "@/features/projects/MembersPage";
 import { ProjectOverviewPage } from "@/features/projects/ProjectOverviewPage";
@@ -52,7 +53,11 @@ function RequireAuth() {
       </div>
     );
   }
-  if (error || !data?.user) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  if (error || !data?.user) {
+    // Visitors see the landing page at the root; deep links still go to sign-in and return afterwards.
+    if (location.pathname === "/") return <LandingPage />;
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  }
   return <Outlet />;
 }
 

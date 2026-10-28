@@ -161,3 +161,24 @@ test("Workflow E: another user cannot access a private project", async ({ page, 
   expect(status).toBe(404);
   await other.close();
 });
+
+test("Visitors see the landing page and can sign up from it", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: /Business intelligence that/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Sign in" }).first()).toBeVisible();
+  // Deep links still require sign-in rather than showing the landing page.
+  await page.goto("/projects");
+  await expect(page).toHaveURL(/\/login$/);
+  await page.goto("/");
+  await page.getByRole("link", { name: "Get started" }).first().click();
+  await expect(page).toHaveURL(/\/login\?mode=register$/);
+  await page.getByLabel("Name").fill("Lena");
+  await page.getByLabel("Email").fill(`lena${Date.now()}@example.com`);
+  await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
+  await page.getByRole("button", { name: "Create account" }).click();
+  await expect(page.getByRole("heading", { name: /Welcome, Lena/ })).toBeVisible();
+  // Signed-in users get the workspace at "/", and signing out returns to the landing page.
+  await page.getByRole("button", { name: "Account menu" }).click();
+  await page.getByRole("menuitem", { name: "Sign out" }).click();
+  await expect(page.getByRole("heading", { name: /Business intelligence that/ })).toBeVisible();
+});

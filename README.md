@@ -16,6 +16,7 @@ machine; no cloud services, paid APIs or AI models are required.
 
 | Area | Capabilities |
 |---|---|
+| **Landing & sign-in** | Public landing page for visitors (features, workflow, security, real product screenshots); split-layout sign-in / registration with show/hide password and a strength meter; deep links still require sign-in |
 | **Projects** | Create, rename, search, archive and restore, delete with confirmation; overview built from real metadata (datasets, dashboards, queries, quality, activity, jobs); member roles (viewer / editor / owner) |
 | **Ingestion** | CSV/TSV (delimiter sniffing, encodings, header and null markers, skip rows), Excel `.xlsx`/`.xls` with sheet picker, JSON arrays / NDJSON / single-array documents (nested objects flattened), Parquet. Files are validated **by content**, not just extension. Preview with type overrides before import. Imports run as background jobs. |
 | **Schema inference** | Integer, float, decimal, boolean, date, timestamp and string. Dates are only parsed when **every** value matches **one** unambiguous format, so ambiguous `05/01/2024` stays text, with a warning. Type overrides are strict: failing values abort with counts and examples instead of becoming silent nulls. |

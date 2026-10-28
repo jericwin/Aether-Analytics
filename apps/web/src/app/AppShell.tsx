@@ -196,7 +196,7 @@ export function AppShell() {
                   icon={<LogOut />}
                   onSelect={() =>
                     logout.mutate(undefined, {
-                      onSuccess: () => navigate("/login"),
+                      onSuccess: () => navigate("/"),
                       onError: () => toast.error("Sign out failed"),
                     })
                   }

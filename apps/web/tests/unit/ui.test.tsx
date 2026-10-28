@@ -6,7 +6,7 @@ import { MemoryRouter } from "react-router-dom";
 import { DataGrid } from "@/components/DataGrid";
 import { StatusBadge } from "@/components/ui/feedback";
 import { TooltipProvider } from "@/components/ui/menu";
-import { loginSchema, registerSchema } from "@/features/auth/AuthPage";
+import { loginSchema, passwordStrength, registerSchema } from "@/features/auth/AuthPage";
 import { suggestTableName } from "@/features/datasets/ImportWizard";
 import { CreateProjectDialog } from "@/features/projects/CreateProjectDialog";
 import { ApiError, api } from "@/lib/api";
@@ -86,5 +86,15 @@ describe("api client", () => {
     expect((err as ApiError).requestId).toBe("r1");
     const init = fetchMock.mock.calls[0]![1] as RequestInit;
     expect((init.headers as Record<string, string>)["X-CSRF-Token"]).toBe("tok123");
+  });
+});
+
+describe("passwordStrength", () => {
+  it("scores length and character variety", () => {
+    expect(passwordStrength("")).toBe(0);
+    expect(passwordStrength("short")).toBe(0);
+    expect(passwordStrength("longenough")).toBe(1);
+    expect(passwordStrength("longenoughpassw")).toBe(2);
+    expect(passwordStrength("Longenough-Pass9")).toBe(4);
   });
 });
