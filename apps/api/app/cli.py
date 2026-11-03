@@ -10,6 +10,7 @@
 """
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -32,7 +33,7 @@ def main(argv: list[str] | None = None) -> None:
     sub.add_parser("migrate")
     serve = sub.add_parser("serve")
     serve.add_argument("--host", default="127.0.0.1", help="Bind address (default: loopback only)")
-    serve.add_argument("--port", type=int, default=8000)
+    serve.add_argument("--port", type=int, default=int(os.environ.get("PORT", 8000)))
     serve.add_argument("--reload", action="store_true")
     sub.add_parser("worker")
     demo = sub.add_parser("demo-data")

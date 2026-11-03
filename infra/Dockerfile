@@ -24,4 +24,4 @@ RUN useradd --create-home --uid 10001 aether && mkdir -p /data && chown aether /
 USER aether
 ENV AETHER_STORAGE_DIR=/data
 EXPOSE 8000
-CMD ["uv", "run", "--no-sync", "aether", "serve", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uv", "run", "--no-sync", "aether", "serve", "--host", "0.0.0.0"]
