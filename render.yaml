@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: aetheranalytics-api
+    env: docker
+    dockerfilePath: ./infra/Dockerfile
+    plan: free
+    region: singapore
+    envVars:
+      - key: AETHER_DATABASE_URL
+        sync: false
+      - key: AETHER_COOKIE_SECURE
+        value: "true"
+      - key: AETHER_STORAGE_DIR
+        value: "/data"
+      - key: AETHER_SMTP_HOST
+        value: smtp.gmail.com
+      - key: AETHER_SMTP_PORT
+        value: "587"
+      - key: AETHER_SMTP_USER
+        sync: false
+      - key: AETHER_SMTP_PASSWORD
+        sync: false
+      - key: AETHER_SMTP_FROM
+        sync: false
+      - key: AETHER_SMTP_TLS
+        value: "true"
