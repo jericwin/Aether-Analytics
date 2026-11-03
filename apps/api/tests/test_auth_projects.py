@@ -104,3 +104,29 @@ def test_access_control_between_users(api: Api, other_api: Api):
 def test_timestamps_are_timezone_aware(api: Api):
     p = api.create_project("TZ")
     assert p["created_at"].endswith(("Z", "+00:00"))
+
+
+def test_email_verification_flow(app, monkeypatch):
+    from app.core.config import get_settings
+    monkeypatch.setattr(get_settings(), "require_email_verification", True)
+
+    c = TestClient(app)
+    email = "verify-me@example.com"
+    r = c.post("/api/v1/auth/send-code", json={"email": email})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["sent"] is True
+    code = body["preview_code"]
+    assert code is not None and len(code) == 6
+
+    bad = c.post("/api/v1/auth/register", json={"email": email, "display_name": "Test", "password": "secure-password-123"})
+    assert bad.status_code == 400
+    assert bad.json()["error"]["code"] == "code_required"
+
+    bad2 = c.post("/api/v1/auth/register", json={"email": email, "display_name": "Test", "password": "secure-password-123", "code": "000000"})
+    assert bad2.status_code == 400
+    assert bad2.json()["error"]["code"] == "invalid_code"
+
+    ok = c.post("/api/v1/auth/register", json={"email": email, "display_name": "Test", "password": "secure-password-123", "code": code})
+    assert ok.status_code == 201
+    assert ok.json()["email"] == email

@@ -31,6 +31,11 @@ class AppError(Exception):
         self.details = details
 
 
+class BadRequest(AppError):
+    status_code = 400
+    code = "bad_request"
+
+
 class NotFound(AppError):
     status_code = 404
     code = "not_found"

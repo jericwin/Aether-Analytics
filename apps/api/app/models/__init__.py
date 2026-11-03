@@ -30,6 +30,17 @@ class User(IdMixin, TimestampMixin, Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
 
+class EmailVerification(IdMixin, Base):
+    __tablename__ = "email_verifications"
+
+    email: Mapped[str] = mapped_column(String(320), index=True, nullable=False)
+    code: Mapped[str] = mapped_column(String(6), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+
 class UserSession(IdMixin, Base):
     __tablename__ = "sessions"
 

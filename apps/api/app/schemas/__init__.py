@@ -36,6 +36,17 @@ class RegisterIn(BaseModel):
     email: EmailStr
     display_name: str = Field(min_length=1, max_length=120)
     password: str = Field(min_length=10, max_length=256)
+    code: str | None = Field(default=None, min_length=4, max_length=10)
+
+
+class SendCodeIn(BaseModel):
+    email: EmailStr
+
+
+class SendCodeOut(BaseModel):
+    sent: bool
+    message: str
+    preview_code: str | None = None
 
 
 class LoginIn(BaseModel):

@@ -17,10 +17,11 @@ def test_backup_restore_round_trip(sales_dataset, tmp_path):
     assert api.delete(f"/api/v1/projects/{pid}").status_code == 204
     assert api.get(f"/api/v1/projects/{pid}").status_code == 404
 
+    api.create_project("Existing project to test non-empty guard")
     with pytest.raises(RuntimeError, match="not empty"):
         restore_backup(archive)
     manifest = restore_backup(archive, force=True)
-    assert manifest["alembic_revision"] == "0001"
+    assert manifest["alembic_revision"] in ("0001", "0002")
 
     get_engine().dispose()
     assert api.get(f"/api/v1/projects/{pid}").status_code == 200

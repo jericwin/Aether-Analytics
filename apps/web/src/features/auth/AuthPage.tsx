@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, Check, Eye, EyeOff, Lock, Mail, User } from "lucide-react";
-import { forwardRef, type InputHTMLAttributes, type ReactNode, useState } from "react";
+import { ArrowLeft, Check, Eye, EyeOff, KeyRound, Lock, Mail, User } from "lucide-react";
+import { forwardRef, type InputHTMLAttributes, type ReactNode, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { z } from "zod";
@@ -8,7 +8,7 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { ErrorState, Spinner } from "@/components/ui/feedback";
 import { cn } from "@/lib/utils";
-import { useAuthStatus, useLogin, useRegister } from "@/services/hooks";
+import { useAuthStatus, useLogin, useRegister, useSendVerificationCode } from "@/services/hooks";
 
 export const loginSchema = z.object({
   email: z.string().trim().email("Enter a valid email address"),
@@ -19,6 +19,7 @@ export const registerSchema = z.object({
   display_name: z.string().trim().min(1, "Name is required").max(120),
   email: z.string().trim().email("Enter a valid email address"),
   password: z.string().min(10, "Use at least 10 characters").max(256),
+  code: z.string().trim().min(6, "Enter the 6-digit code").max(6, "Enter the 6-digit code").optional(),
 });
 
 type LoginValues = z.infer<typeof loginSchema>;
@@ -129,21 +130,172 @@ function LoginForm({ onDone }: { onDone: () => void }) {
 
 function RegisterForm({ onDone }: { onDone: () => void }) {
   const reg = useRegister();
+  const sendCode = useSendVerificationCode();
+  const [step, setStep] = useState<"details" | "verify">("details");
+  const [previewCode, setPreviewCode] = useState<string | null>(null);
+  const [countdown, setCountdown] = useState<number>(0);
   const [shown, setShown] = useState(false);
-  const { register, handleSubmit, formState, watch } = useForm<RegisterValues>({ resolver: zodResolver(registerSchema) });
+  const { register, handleSubmit, formState, watch, trigger, getValues } = useForm<RegisterValues>({
+    resolver: zodResolver(registerSchema),
+  });
+
   const pw = watch("password") ?? "";
+  const email = watch("email") ?? "";
+
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const timer = setInterval(() => setCountdown((c) => c - 1), 1000);
+    return () => clearInterval(timer);
+  }, [countdown]);
+
+  const handleSendCode = async () => {
+    const valid = await trigger(["display_name", "email", "password"]);
+    if (!valid) return;
+    try {
+      const res = await sendCode.mutateAsync({ email: getValues("email") });
+      setPreviewCode(res.preview_code ?? null);
+      setStep("verify");
+      setCountdown(60);
+    } catch {
+      // error handled by sendCode.error
+    }
+  };
+
+  const handleResend = async () => {
+    if (countdown > 0) return;
+    try {
+      const res = await sendCode.mutateAsync({ email: getValues("email") });
+      setPreviewCode(res.preview_code ?? null);
+      setCountdown(60);
+    } catch {
+      // error handled by sendCode.error
+    }
+  };
+
+  const onSubmit = (v: RegisterValues) => {
+    if (step === "details") {
+      void handleSendCode();
+      return;
+    }
+    if (!v.code || v.code.trim().length !== 6) {
+      return;
+    }
+    reg.mutate(v, { onSuccess: onDone });
+  };
+
   return (
-    <form className="flex flex-col gap-4" onSubmit={handleSubmit((v) => reg.mutate(v, { onSuccess: onDone }))} noValidate>
-      <AuthInput id="reg-name" label="Name" icon={<User />} autoComplete="name" placeholder="Ada Lovelace" autoFocus
-        error={formState.errors.display_name?.message} {...register("display_name")} />
-      <AuthInput id="reg-email" label="Email" icon={<Mail />} type="email" autoComplete="email" placeholder="you@company.com"
-        error={formState.errors.email?.message} {...register("email")} />
-      <AuthInput id="reg-password" label="Password" icon={<Lock />} type={shown ? "text" : "password"} autoComplete="new-password"
-        placeholder="Create a password" error={formState.errors.password?.message}
-        hint={<StrengthMeter value={pw} />}
-        trailing={<RevealButton shown={shown} onToggle={() => setShown((s) => !s)} />} {...register("password")} />
-      {reg.error && <ErrorState error={reg.error} compact />}
-      <Button type="submit" variant="primary" loading={reg.isPending} className="mt-1 h-10 justify-center text-[14px]">Create account</Button>
+    <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)} noValidate>
+      {step === "details" ? (
+        <>
+          <AuthInput
+            id="reg-name"
+            label="Name"
+            icon={<User />}
+            autoComplete="name"
+            placeholder="Ada Lovelace"
+            autoFocus
+            error={formState.errors.display_name?.message}
+            {...register("display_name")}
+          />
+          <AuthInput
+            id="reg-email"
+            label="Email"
+            icon={<Mail />}
+            type="email"
+            autoComplete="email"
+            placeholder="you@company.com"
+            error={formState.errors.email?.message}
+            {...register("email")}
+          />
+          <AuthInput
+            id="reg-password"
+            label="Password"
+            icon={<Lock />}
+            type={shown ? "text" : "password"}
+            autoComplete="new-password"
+            placeholder="Create a password"
+            error={formState.errors.password?.message}
+            hint={<StrengthMeter value={pw} />}
+            trailing={<RevealButton shown={shown} onToggle={() => setShown((s) => !s)} />}
+            {...register("password")}
+          />
+          {sendCode.error && <ErrorState error={sendCode.error} compact />}
+          <Button
+            type="button"
+            onClick={handleSendCode}
+            variant="primary"
+            loading={sendCode.isPending}
+            className="mt-1 h-10 justify-center text-[14px]"
+          >
+            Send verification code
+          </Button>
+        </>
+      ) : (
+        <>
+          <div className="flex flex-col gap-1 rounded-lg border border-line bg-surface-2 p-3 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="font-medium text-fg">Verification code sent</span>
+              <button
+                type="button"
+                onClick={() => setStep("details")}
+                className="text-accent hover:underline focus-visible:outline-none"
+              >
+                Change email
+              </button>
+            </div>
+            <span className="text-muted">
+              We sent a 6-digit code to <strong className="text-fg">{email}</strong>. Please check your inbox.
+            </span>
+          </div>
+
+          {previewCode && (
+            <div className="rounded-lg border border-accent/40 bg-accent-soft px-3 py-2 text-xs text-accent">
+              <span className="font-semibold">Demo Notice:</span> Your verification code is{" "}
+              <span className="font-mono font-bold tracking-widest text-[13px]">{previewCode}</span>
+            </div>
+          )}
+
+          <AuthInput
+            id="reg-code"
+            label="6-Digit Verification Code"
+            icon={<KeyRound />}
+            placeholder="000000"
+            maxLength={6}
+            autoFocus
+            className="font-mono text-center text-lg tracking-[0.3em] font-bold"
+            error={formState.errors.code?.message}
+            {...register("code", { required: "Verification code is required" })}
+          />
+
+          <div className="flex items-center justify-between text-xs text-muted">
+            <span>Didn't receive the code?</span>
+            {countdown > 0 ? (
+              <span className="text-subtle">Resend in {countdown}s</span>
+            ) : (
+              <button
+                type="button"
+                onClick={handleResend}
+                disabled={sendCode.isPending}
+                className="font-medium text-accent hover:underline focus-visible:outline-none"
+              >
+                Resend code
+              </button>
+            )}
+          </div>
+
+          {reg.error && <ErrorState error={reg.error} compact />}
+          {sendCode.error && <ErrorState error={sendCode.error} compact />}
+
+          <Button
+            type="submit"
+            variant="primary"
+            loading={reg.isPending}
+            className="mt-1 h-10 justify-center text-[14px]"
+          >
+            Verify & Create account
+          </Button>
+        </>
+      )}
     </form>
   );
 }

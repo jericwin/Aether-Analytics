@@ -64,10 +64,18 @@ export function useLogin() {
   });
 }
 
+export function useSendVerificationCode() {
+  return useMutation({
+    mutationFn: (body: { email: string }) =>
+      api.post<{ sent: boolean; message: string; preview_code?: string }>("/auth/send-code", body),
+  });
+}
+
 export function useRegister() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: { email: string; password: string; display_name: string }) => api.post<User>("/auth/register", body),
+    mutationFn: (body: { email: string; password: string; display_name: string; code?: string }) =>
+      api.post<User>("/auth/register", body),
     onSuccess: () => qc.invalidateQueries(),
   });
 }

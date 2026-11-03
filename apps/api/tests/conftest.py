@@ -31,6 +31,7 @@ os.environ.update({
     "AETHER_LOG_JSON": "false",
     "AETHER_LOG_LEVEL": "WARNING",
     "AETHER_RATE_LIMIT_AUTH_PER_MINUTE": "1000",
+    "AETHER_REQUIRE_EMAIL_VERIFICATION": "false",
 })
 
 from alembic.config import Config  # noqa: E402

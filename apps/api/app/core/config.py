@@ -57,6 +57,17 @@ class Settings(BaseSettings):
     log_json: bool = True
 
     rate_limit_auth_per_minute: int = 20
+    # Email verification and SMTP settings
+    require_email_verification: bool = True
+    verification_code_ttl_minutes: int = 15
+
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_user: str | None = None
+    smtp_password: str | None = None
+    smtp_from: str = "Aether Analytics <no-reply@aetheranalytics.app>"
+    smtp_tls: bool = True
+    smtp_ssl: bool = False
 
     @property
     def is_sqlite(self) -> bool:
